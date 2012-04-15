@@ -7,6 +7,16 @@ from ..rpc import account_pb2
 args = None
 
 class ServerConnection(messaging.Rpc):
+    """This class connects to the server, and handles messages that
+    arrive.  The superclass provides a function to send messages back
+    to the server (send_rpc).  These messages are sent asynchronously,
+    when asyncore.loop is entered.
+
+    The superclass also catches and displays exceptions.  It then
+    invokes uncaught_exception; the client exits when this function is
+    called, but the server does nothing because it should attempt to
+    carry on running."""
+
     def __init__(self, sock):
         messaging.Rpc.__init__(self, sock=sock)
         self.app = None

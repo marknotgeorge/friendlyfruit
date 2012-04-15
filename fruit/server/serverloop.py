@@ -6,6 +6,9 @@ from .. import config, messaging
 from ..rpc import account_pb2, game_pb2
 
 class FruitRequestHandler(messaging.Rpc):
+
+    """Send and receive RPC messages on behalf of the server."""
+
     def message_received(self, name, msg):
         if name == "account_pb2.NewAccount":
             data = account_pb2.NewAccount()

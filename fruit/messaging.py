@@ -1,6 +1,17 @@
 import asynchat, struct, traceback
 
 class Rpc(asynchat.async_chat):
+
+    """This class represents the part of the RPC interface that is
+    shared between the client and the server.  It provides message
+    passing on top of the normal async_chat object.  It also displays
+    any exceptions that occur, because async_chat doesn't show them in
+    a convenient form.
+
+    The uncaught_exception method is overridden in the client; the
+    client should exit following an uncaught exception, while the
+    server should attempt to carry on."""
+
     def __init__(self, server=None, sock=None, addr=None):
         asynchat.async_chat.__init__(self, sock)
         self.__ibuffer = ""

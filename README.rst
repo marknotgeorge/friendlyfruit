@@ -1,10 +1,12 @@
+.. -*- mode: rst;mode: auto-fill -*-
+
 Running FriendlyFruit
 =====================
 
 Currently FriendlyFruit is just a proof-of-concept.  There are various
-problems around 3D models that I have been trying to solve, and
-FriendlyFruit is the testbed.  However, it does run, and it could be
-the foundation for a real Raspberry Pi multi-user game.
+problems around 3D models and RPC that I have been trying to solve,
+and FriendlyFruit is the testbed.  However, it does run, and it could
+be the foundation for a real Raspberry Pi multi-user game.
 
 I've been using Panda3D on the basis that Panda is probably the
 easiest game engine to learn.  Currently there is a demo scene that
@@ -20,15 +22,114 @@ demonstrating that the textures work.  He also has a walk cycle of
 sorts, demonstrating that armatures and animations work.  That's
 really all we need.
 
+Prerequisites
+-------------
+
 If you want to get FriendlyFruit working, you will need to install
 Panda3D (the developer kit, not the runtime) from
-http://www.panda3d.org/.  I don't think you need anything else unless
-you intend to modify the models.  In that case, see the next section
-for instructions.
+http://www.panda3d.org/.  If you want to run your own server (and you
+do, because there are no public servers at this time) you will need
+the following additional dependencies:
 
-To run FriendlyFruit, just change into the 'client' directory and run
-the Python script called 'client'.  You then control the camera with
-the WASD keys, plus the left and right arrow keys.
+* MongoDB (http://www.mongodb.org/) and PyMongo
+  (http://www.mongodb.org/display/DOCS/Python+Language+Center).  I am
+  using MongoDB 2.0.4 from
+  http://www.mongodb.org/display/DOCS/Ubuntu+and+Debian+packages but
+  you should be able to use the version from your distro without
+  problems.
+
+  One word of warning is that Mongo tends to waste disk space if you
+  aren't storing a large amount of data.  When you create a new
+  database, it assumes you will be storing a lot of data, and it
+  creates some very large files for it!  For this reason, edit
+  /etc/mongodb.conf and add the option
+
+  smallfiles = true
+
+  to the end.  This will cause the largest per-database file to be
+  32M.  For the same reason, if you run multiple server instances, try
+  to use the same database for all of them (unless they become very
+  large).  That way you only take the big file hit once, rather than
+  once for each instance.
+
+  It's also worth adding the option
+
+  journal = true
+
+  so you don't lose your data in the event that your machine crashes.
+  (This is the default with some configurations of Mongo, but
+  specifying it explicitly doesn't hurt.)
+
+* Google Protobuf (https://developers.google.com/protocol-buffers/).
+  You should be able to install this from your distro.  You need the
+  Python support and the compiler.
+
+* Scons (http://www.scons.org/).  This is used for building the
+  Protobuf RPC stubs.  Again you should be able to install it from
+  your distro.
+
+* Pyflakes (https://launchpad.net/pyflakes) is a lint tool for
+  Python.  You don't need this unless you're making a lot of changes
+  to the source files, and you want to check for silly bugs.
+
+  There is a script called run-pyflakes which invokes this program on
+  all the manually-written Python files.  It's probably sensible to
+  run this before checking changes into git.
+
+Building
+--------
+
+Run scons in the top level directory, to build the RPC stubs.  These
+are pure Python and presumably cross-platform; nothing is compiled to
+machine code.
+
+Configuration
+-------------
+
+You should have a file called server.cfg.sample.  You probably don't
+need to change this, in which case the simplest thing is to symlink it
+to server.cfg.  If you do need to change it, make a copy instead, and
+then edit the copy.
+
+The network section allows you to change the addresses that the server
+listens on.  You could for example make it listen only on the loopback
+address, for extra security during testing.
+
+The database section gives the details of your database server.  The
+host and port should normally be left unchanged; you only need them if
+you want to run the server on a different machine to Mongo.
+
+The prefix allows you to run more than one instance of FriendlyFruit
+with a single database.  The default ('main.fruit') tells the server
+to use the database 'main' and to prefix all collection names with
+'fruit'.  To run two instances against the same database, you could
+give them prefixes like 'main.raspberry' and 'main.strawberry'.  If
+they got big enough that you wanted to use different databases, you
+could use 'raspberry.fruit' and 'strawberry.fruit'.
+
+Running FriendlyFruit
+---------------------
+
+Start by running the server.  It takes no arguments because all its
+configuration information comes from server.cfg.
+
+Once the server is running, you need to create a user account.  Run
+the client like this:
+
+./client --register -u myname -p mypass localhost
+
+You should see a response from the server indicating that your account
+was created.
+
+To play, you do much the same thing:
+
+./client -u myname -p mypass localhost
+
+(I know the handling of the password isn't very secure or convenient,
+but it's not the most important thing at the moment.)
+
+Once the client is running, you control the camera with the WASD keys,
+plus the left and right arrow keys.
 
 I've tested this with Ubuntu 11.10.  If that's what you're running,
 and you have a 3D-capable video card, you stand a good chance of
@@ -40,7 +141,6 @@ expect anything polished, instead expect to mess around quite a bit in
 order to get it working.
 
 Please let me know how you get on.
-
 
 3D Object Notes
 ===============
