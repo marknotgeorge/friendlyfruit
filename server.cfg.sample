@@ -1,0 +1,11 @@
+[network]
+
+# Specify the addresses the server will listen on.  The listen6 form
+# will listen on IPv4 and IPv6, so that is the most useful.  Use the
+# listen4 form if you have no IPv6 support in your kernel.
+#
+# If you want to listen on additional addresses, specify them as
+# listen6.1, listen6.2, etc.
+
+# listen4.1 = 0.0.0.0, 41810
+listen6.1 = ::, 41810

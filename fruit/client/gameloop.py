@@ -1,9 +1,4 @@
-#!/usr/bin/python
-
-from math import pi, sin, cos
-
 from direct.showbase.ShowBase import ShowBase
-from direct.task import Task
 from direct.actor.Actor import Actor
 from direct.interval.IntervalGlobal import Sequence
 from panda3d.bullet import BulletCapsuleShape, BulletCharacterControllerNode, BulletPlaneShape, BulletRigidBodyNode, \
@@ -11,11 +6,16 @@ from panda3d.bullet import BulletCapsuleShape, BulletCharacterControllerNode, Bu
 from panda3d.core import BitMask32, DirectionalLight, Point3, VBase4, Vec3
 from pandac.PandaModules import loadPrcFile
 
-loadPrcFile("config.prc")
+loadPrcFile("client-config.prc")
 
 class FriendlyFruit(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+
+        # Panda pollutes the global namespace.  Some of the extra globals can be referred to in nicer ways
+        # (for example self.render instead of render).  The globalClock object, though, is only a global!  We
+        # create a reference to it here, in a way that won't upset PyFlakes.
+        self.globalClock = __builtins__["globalClock"]
 
         # Turn off the debugging system which allows the camera to be adjusted directly by the mouse.
         self.disableMouse()
@@ -27,7 +27,7 @@ class FriendlyFruit(ShowBase):
         shape = BulletPlaneShape(Vec3(0, 0, 1), 0)
         node = BulletRigidBodyNode('Ground')
         node.addShape(shape)
-        np = render.attachNewNode(node)
+        np = self.render.attachNewNode(node)
         np.setPos(0, 0, 0)
         self.world.attachRigidBody(node)
 
@@ -38,7 +38,7 @@ class FriendlyFruit(ShowBase):
         shape = BulletCapsuleShape(radius, height - 2 * radius, ZUp)
 
         self.playerNode = BulletCharacterControllerNode(shape, 0.4, 'Player')
-        self.playerNP = render.attachNewNode(self.playerNode)
+        self.playerNP = self.render.attachNewNode(self.playerNode)
         self.playerNP.setPos(0, -20, 3)
         self.playerNP.setCollideMask(BitMask32.allOn())
         self.world.attachCharacter(self.playerNP.node())
@@ -95,9 +95,9 @@ class FriendlyFruit(ShowBase):
         # Create a light so we can see the scene.
         dlight = DirectionalLight('dlight')
         dlight.setColor(VBase4(2, 2, 2, 0))
-        dlnp = render.attachNewNode(dlight)
+        dlnp = self.render.attachNewNode(dlight)
         dlnp.setHpr(0, -60, 0)
-        render.setLight(dlnp)
+        self.render.setLight(dlnp)
 
         # Create a task to update the scene regularly.
         self.taskMgr.add(self.update, "UpdateTask")
@@ -109,7 +109,7 @@ class FriendlyFruit(ShowBase):
             self.playerNode.setAngularMovement(self.__turn_rate * (task.time - self.__last_turn))
             self.__last_turn = task.time
 
-        dt = globalClock.getDt()
+        dt = self.globalClock.getDt()
         self.world.doPhysics(dt)
         return task.cont
 
@@ -131,6 +131,3 @@ class FriendlyFruit(ShowBase):
     def __turn(self, rate):
         self.__last_turn = None
         self.__turn_rate = rate
-
-app = FriendlyFruit()
-app.run()

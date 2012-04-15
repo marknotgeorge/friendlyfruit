@@ -1,0 +1,10 @@
+-*- mode:text;mode:auto-fill -*-
+
+- Login is insecure; passwords are sent to the server in plain text.
+
+- We need to validate the values in messages, for example we shouldn't
+  try to receive a message which claims to have an unreasonable
+  length (negative or very large).
+
+- We need to be more careful about clients which stop responding,
+  unexpectedly drop the connection, and so on.

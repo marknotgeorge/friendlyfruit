@@ -1,0 +1,22 @@
+// -*- idl -*-
+
+message Kick {
+}
+
+message TellUser {
+  required string message = 1;
+}
+
+message Error {
+  required string message = 1;
+}
+
+message NewAccount {
+  required string user_id = 1;
+  required string password = 2;
+}
+
+message Login {
+  required string user_id = 1;
+  required string password = 2;
+}

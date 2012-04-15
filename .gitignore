@@ -1,2 +1,8 @@
 *~
 *.blend[0-9]
+*.py[co]
+
+.sconsign.dblite
+
+/fruit/rpc/*_pb2.py
+/server.cfg

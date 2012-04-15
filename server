@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+from fruit import config
+from fruit.server import serverloop
+
+config.read("server.cfg")
+serverloop.run()
