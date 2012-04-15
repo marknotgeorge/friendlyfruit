@@ -1,4 +1,7 @@
 import asyncore, re, socket
+import pymongo.errors
+
+from . import db
 from .. import config, messaging
 from ..rpc import account_pb2, game_pb2
 
@@ -14,16 +17,33 @@ class FruitRequestHandler(messaging.Rpc):
             self.__login(data.user_id, data.password)
 
     def __new_account(self, user_id, password):
-        print "new a/c", user_id, password
-        msg = account_pb2.TellUser()
-        msg.message = "Your account has been created.  Thank you for registering."
-        self.send_rpc(msg)
+        try:
+            user = {"user_id": user_id, "password": password}
+            db().users.insert(user, safe=True)
+
+            msg = account_pb2.TellUser()
+            msg.message = "Your account has been created.  Thank you for registering."
+            self.send_rpc(msg)
+        except pymongo.errors.DuplicateKeyError:
+            msg = account_pb2.Error()
+            msg.message = "That user ID is already in use."
+            self.send_rpc(msg)
+
         msg = account_pb2.Kick()
         self.send_rpc(msg)
 
     def __login(self, user_id, password):
-        msg = game_pb2.Start()
-        self.send_rpc(msg)
+        user = db().users.find_one({"user_id": user_id})
+        if user is None or user["password"] != password:
+            msg = account_pb2.Error()
+            msg.message = "Unknown user ID or incorrect password."
+            self.send_rpc(msg)
+
+            msg = account_pb2.Kick()
+            self.send_rpc(msg)
+        else:
+            msg = game_pb2.Start()
+            self.send_rpc(msg)
 
 class FruitServer(asyncore.dispatcher):
     def __init__(self, address_family, address):
