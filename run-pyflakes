@@ -1,0 +1,4 @@
+#!/bin/sh
+
+SOURCES=`find . -name \*.py | egrep -v /rpc/[a-z_]+_pb2\\.py`
+pyflakes client server $SOURCES
