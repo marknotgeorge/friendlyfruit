@@ -2,7 +2,7 @@ import argparse, asyncore, socket, sys
 
 from . import gameloop
 from .. import messaging
-from ..rpc import account_pb2
+from ..rpc import account_pb2, game_pb2
 
 args = None
 
@@ -37,6 +37,28 @@ class ServerConnection(messaging.Rpc):
             print data.message
         elif name == "game_pb2.Start":
             self.__start_game()
+        elif name == "game_pb2.MovePlayer":
+            data = game_pb2.MovePlayer()
+            data.ParseFromString(msg)
+            self.app.server_moves_player(data.pos.x, data.pos.y, data.pos.z)
+        elif name == "game_pb2.PlayerSpeed":
+            data = game_pb2.PlayerSpeed()
+            data.ParseFromString(msg)
+            self.app.server_sets_player_speed(data.speed.x, data.speed.y, data.speed.z)
+        elif name == "game_pb2.PlayerRotation":
+            data = game_pb2.PlayerRotation()
+            data.ParseFromString(msg)
+            self.app.server_sets_player_rotation(data.rotation)
+        elif name == "game_pb2.EventListen":
+            data = game_pb2.EventListen()
+            data.ParseFromString(msg)
+            self.app.accept(data.event, self.__send_event_to_server, [data.tag])
+
+    def __send_event_to_server(self, tag, *args):
+        data = game_pb2.EventOccurred()
+        data.tag = tag
+        data.args.extend([self.encode_variant(arg) for arg in args])
+        self.send_rpc(data)
 
     def __start_game(self):
         self.app = gameloop.FriendlyFruit()

@@ -1,3 +1,5 @@
+import asyncore
+
 from direct.showbase.ShowBase import ShowBase
 from direct.actor.Actor import Actor
 from direct.interval.IntervalGlobal import Sequence
@@ -39,36 +41,12 @@ class FriendlyFruit(ShowBase):
 
         self.playerNode = BulletCharacterControllerNode(shape, 0.4, 'Player')
         self.playerNP = self.render.attachNewNode(self.playerNode)
-        self.playerNP.setPos(0, -20, 3)
         self.playerNP.setCollideMask(BitMask32.allOn())
         self.world.attachCharacter(self.playerNP.node())
         self.camera.reparentTo(self.playerNP)
 
-        # The player will fall onto the ground plane when the game starts.  This is a feature, not a bug. :)
-
-        # The player starts out not moving and not turning.
-        self.__speed = Vec3()
+        # The player starts out not turning.
         self.__turn_rate = 0
-
-        # Set up the keyboard controls.
-        player_speed = 75
-        strafe_speed = player_speed / 2
-        turn_speed = 50000
-
-        self.accept('w', self.__forward, [player_speed])
-        self.accept('w-up', self.__forward, [0])
-        self.accept('s', self.__forward, [-player_speed])
-        self.accept('s-up', self.__forward, [0])
-
-        self.accept('a', self.__strafe, [-strafe_speed])
-        self.accept('a-up', self.__strafe, [0])
-        self.accept('d', self.__strafe, [strafe_speed])
-        self.accept('d-up', self.__strafe, [0])
-
-        self.accept('arrow_left', self.__turn, [turn_speed])
-        self.accept('arrow_left-up', self.__turn, [0])
-        self.accept('arrow_right', self.__turn, [-turn_speed])
-        self.accept('arrow_right-up', self.__turn, [0])
 
         # Load the 3dWarehouse model.
         cathedral = self.loader.loadModel("3dWarehouse_Reykjavik_Cathedral.egg")
@@ -104,6 +82,8 @@ class FriendlyFruit(ShowBase):
 
     # Update the scene by turning the player if necessary, and processing physics.
     def update(self, task):
+        asyncore.loop(timeout=0, use_poll=True, count=1)
+
         if self.__turn_rate != 0:
             if self.__last_turn is None: self.__last_turn = task.time
             self.playerNode.setAngularMovement(self.__turn_rate * (task.time - self.__last_turn))
@@ -113,21 +93,12 @@ class FriendlyFruit(ShowBase):
         self.world.doPhysics(dt)
         return task.cont
 
-    # Move the player according to the speed set by the keyboard controls.
-    def __move_player(self):
-        self.playerNode.setLinearMovement(self.__speed, True)
+    def server_moves_player(self, x, y, z):
+        self.playerNP.setPos(x, y, z)
 
-    # Set the player to move forward (W or S keys).
-    def __forward(self, speed):
-        self.__speed.setY(speed)
-        self.__move_player()
+    def server_sets_player_speed(self, x, y, z):
+        self.playerNode.setLinearMovement(Vec3(x, y, z), True)
 
-    # Set the player to move sideways (A or D keys).
-    def __strafe(self, speed):
-        self.__speed.setX(speed)
-        self.__move_player()
-
-    # Set the player to turn (left and right arrow keys).
-    def __turn(self, rate):
+    def server_sets_player_rotation(self, rate):
         self.__last_turn = None
         self.__turn_rate = rate

@@ -1,0 +1,13 @@
+// -*- idl -*-
+
+message Variant {
+  optional sint32 v_int = 2;
+  optional float v_float = 1;
+  optional string v_string = 3;
+}
+
+message Vector {
+  required float x = 1;
+  required float y = 2;
+  required float z = 3;
+}

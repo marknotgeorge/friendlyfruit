@@ -1,4 +1,28 @@
 // -*- idl -*-
 
+import "general.proto";
+
 message Start {
+}
+
+message MovePlayer {
+  required Vector pos = 1;
+}
+
+message PlayerSpeed {
+  required Vector speed = 1;
+}
+
+message PlayerRotation {
+  required float rotation = 1;
+}
+
+message EventListen {
+  required string event = 1;
+  required uint32 tag = 2;
+}
+
+message EventOccurred {
+  required uint32 tag = 1;
+  repeated Variant args = 2;
 }

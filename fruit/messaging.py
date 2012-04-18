@@ -1,4 +1,5 @@
 import asynchat, struct, traceback
+from fruit.rpc import general_pb2
 
 class Rpc(asynchat.async_chat):
 
@@ -50,3 +51,29 @@ class Rpc(asynchat.async_chat):
         binary = rpc_name + "\0" + msg.SerializeToString()
         length = struct.pack("!i", len(binary))
         self.push(length + binary)
+
+    @staticmethod
+    def encode_variant(val):
+        data = general_pb2.Variant()
+
+        if isinstance(val, int):
+            data.v_int = val
+        elif isinstance(val, float):
+            data.v_float = val
+        elif isinstance(val, str):
+            data.v_string = val
+        else:
+            assert False, "Type %s cannot be encoded as a Variant." % type(val).__name__
+
+        return data
+
+    @staticmethod
+    def decode_variant(data):
+        if data.HasField("v_int"):
+            return data.v_int
+        elif data.HasField("v_float"):
+            return data.v_float
+        elif data.HasField("v_string"):
+            return data.v_string
+        else:
+            assert False, "Variant cannot be decoded as it does not contain any data."
