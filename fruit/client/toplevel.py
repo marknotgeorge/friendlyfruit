@@ -36,19 +36,20 @@ class ServerConnection(messaging.Rpc):
             data.ParseFromString(msg)
             print data.message
         elif name == "game_pb2.Start":
-            self.__start_game()
-        elif name == "game_pb2.MovePlayer":
-            data = game_pb2.MovePlayer()
+            data = game_pb2.Start()
             data.ParseFromString(msg)
-            self.app.server_moves_player(data.pos.x, data.pos.y, data.pos.z)
-        elif name == "game_pb2.PlayerSpeed":
-            data = game_pb2.PlayerSpeed()
+            self.__start_game(data.player_tag)
+        elif name == "game_pb2.AddObject":
+            data = game_pb2.AddObject()
             data.ParseFromString(msg)
-            self.app.server_sets_player_speed(data.speed.x, data.speed.y, data.speed.z)
-        elif name == "game_pb2.PlayerRotation":
-            data = game_pb2.PlayerRotation()
+            self.app.server_created_object(data.tag, data.height, data.radius)
+        elif name == "game_pb2.ThingState":
+            data = game_pb2.ThingState()
             data.ParseFromString(msg)
-            self.app.server_sets_player_rotation(data.rotation)
+            self.app.server_moves_thing(data.tag, data.location.x, data.location.y, data.location.z,
+                                        data.velocity.x, data.velocity.y, data.velocity.z,
+                                        data.angle, data.angular_velocity)
+
         elif name == "game_pb2.EventListen":
             data = game_pb2.EventListen()
             data.ParseFromString(msg)
@@ -60,9 +61,8 @@ class ServerConnection(messaging.Rpc):
         data.args.extend([self.encode_variant(arg) for arg in args])
         self.send_rpc(data)
 
-    def __start_game(self):
-        self.app = gameloop.FriendlyFruit()
-        
+    def __start_game(self, player_tag):
+        self.app = gameloop.FriendlyFruit(player_tag)
 
 def parse_command_line():
     global args

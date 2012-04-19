@@ -2,9 +2,9 @@ import asyncore, re, socket
 import pymongo.errors
 
 from . import db
-from .gamestate import GameState
+from .gamestate import GameState, Player
 from .. import config, messaging
-from ..rpc import account_pb2, game_pb2, general_pb2
+from ..rpc import account_pb2, game_pb2
 
 class FruitRequestHandler(messaging.Rpc):
 
@@ -59,19 +59,15 @@ class FruitRequestHandler(messaging.Rpc):
             msg = account_pb2.Kick()
             self.send_rpc(msg)
         else:
+            self.__player = Player(self.game_state, self)
             msg = game_pb2.Start()
+            msg.player_tag = self.__player.name
             self.send_rpc(msg)
-            self.game_state.add_player(self)
-
-            # The player starts out not moving and not turning.
-            self.__speed = general_pb2.Vector()
-            self.__speed.x = self.__speed.y = self.__speed.z = 0.0
-            self.__turn_rate = 0
 
             # Set up the keyboard controls.
-            player_speed = 75
+            player_speed = 10
             strafe_speed = player_speed / 2
-            turn_speed = 50000
+            turn_speed = 30
 
             self.accept('w', self.__forward, [player_speed])
             self.accept('w-up', self.__forward, [0])
@@ -102,37 +98,21 @@ class FruitRequestHandler(messaging.Rpc):
         msg.tag = self.__next_event_tag
         self.send_rpc(msg)
 
-    def move_player(self, location):
-        msg = game_pb2.MovePlayer()
-        msg.pos.x = location.getX()
-        msg.pos.y = location.getY()
-        msg.pos.z = location.getZ()
-        self.send_rpc(msg)
-
-    def set_player_speed(self):
-        msg = game_pb2.PlayerSpeed()
-        msg.speed.CopyFrom(self.__speed)
-        self.send_rpc(msg)
-
-    def set_player_rotation(self):
-        msg = game_pb2.PlayerRotation()
-        msg.rotation = self.__turn_rate
-        self.send_rpc(msg)
-
     # Set the player to move forward (W or S keys).
     def __forward(self, speed):
-        self.__speed.y = speed
-        self.set_player_speed()
+        velocity = self.__player.get_velocity()
+        velocity.y = speed
+        self.__player.set_velocity(velocity)
 
     # Set the player to move sideways (A or D keys).
     def __strafe(self, speed):
-        self.__speed.x = speed
-        self.set_player_speed()
+        velocity = self.__player.get_velocity()
+        velocity.x = speed
+        self.__player.set_velocity(velocity)
 
     # Set the player to turn (left and right arrow keys).
     def __turn(self, rate):
-        self.__turn_rate = rate
-        self.set_player_rotation()
+        self.__player.set_angular_velocity(rate)
 
 class FruitServer(asyncore.dispatcher):
     def __init__(self, address_family, address):

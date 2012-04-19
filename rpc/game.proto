@@ -3,18 +3,25 @@
 import "general.proto";
 
 message Start {
+  required string player_tag = 1;
 }
 
-message MovePlayer {
-  required Vector pos = 1;
+message RemoveObject {
+  required string tag = 1;
 }
 
-message PlayerSpeed {
-  required Vector speed = 1;
+message AddObject {
+  required string tag = 1;
+  required float height = 2;
+  required float radius = 3;
 }
 
-message PlayerRotation {
-  required float rotation = 1;
+message ThingState {
+  required string tag = 1;
+  required Vector location = 2;
+  required Vector velocity = 3;
+  required float angle = 4;
+  required float angular_velocity = 5;
 }
 
 message EventListen {
