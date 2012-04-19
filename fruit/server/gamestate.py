@@ -14,6 +14,12 @@ STATIONARY_OBJECT_UPDATE_TIME = 5
 MOVING_OBJECT_UPDATE_TIME = 0.5
 
 class Thing(object):
+
+    """Thing represents a single physical object in the game.  It
+    would be better described as "Object" but that could create
+    confusion with the object-oriented programming concept, or the
+    built-in Python type "object"."""
+
     pending_updates = []
 
     __next_thing = 0
@@ -28,6 +34,10 @@ class Thing(object):
         self.__angular_velocity = 0
 
     def get_unique_name(self, name):
+        """All Things have a unique name.  This is made up of a
+        human-readable string, which is followed by a number to ensure
+        uniqueness."""
+
         Thing.__next_thing += 1
         self.name = name + str(Thing.__next_thing)
         Thing.__thing_list[self.name] = self
@@ -38,9 +48,39 @@ class Thing(object):
         return self.__thing_list.values()
 
     def schedule_for_update(self):
+        """Clients must be notified about changes to the state of
+        Things (movement, rotation, and so on).  A notification is
+        sent every STATIONARY_OBJECT_UPDATE_TIME seconds for objects
+        which are not known to have moved.  If the object is known to
+        be moving, updates are sent every MOVING_OBJECT_UPDATE_TIME
+        seconds.  By updating moving objects more frequently, we
+        reduce disagreement between the client and the server about
+        objects' locations.
+
+        (An object can move without our knowledge, for example if it
+        gets hit and as a result is moved by the physics engine.)
+
+        Pending updates are stored in a priority queue
+        (http://en.wikipedia.org/wiki/Priority_queue).  When we want
+        to send updates, we pop Things off the front of the queue
+        until the highest priority Thing in the queue is not yet due
+        for update.  The nature of a priority queue then guarantees
+        that no other queued Things are due for update either.
+
+        When we want to schedule an update, we just write an entry
+        into the queue with an appropriate priority.  This may mean
+        that some Things are in the queue more than once, but that
+        doesn't matter.  We throw away duplicates before sending out
+        updates; we also make sure that we are not sending an update
+        for a Thing whose priority was lowered after it was placed in
+        the queue."""
+
         heapq.heappush(Thing.pending_updates, (self.update_due_time, self))
 
     def reschedule_update(self):
+        """Schedule an update for this Thing once an appropriate
+        amount of time has passed."""
+
         update_delay = STATIONARY_OBJECT_UPDATE_TIME if self.__velocity.x == 0 and self.__velocity.y == 0 and \
             self.__velocity.z == 0 and self.__angular_velocity == 0 else MOVING_OBJECT_UPDATE_TIME
 
@@ -48,6 +88,9 @@ class Thing(object):
         self.schedule_for_update()
 
     def force_update(self):
+        """Schedule an update for this Thing immediately, probably
+        because we just moved it."""
+
         self.update_due_time = 0
         self.schedule_for_update()
 
@@ -72,6 +115,8 @@ class Thing(object):
         self.force_update()
 
 class LivingThing(Thing):
+    """This is the superclass for players and NPCs."""
+
     def __init__(self, game_state, height, radius, name):
         Thing.__init__(self, game_state)
         self.height = height
@@ -98,6 +143,10 @@ class Player(LivingThing):
         self.move(0, -20, 5)
 
     def update_known_things(self):
+        """Make sure that the client representing this player is aware
+        of the right set of objects.  It is possible that objects were
+        added to, or removed from, the scene."""
+
         candidates = set(self.all_things())
         for remove in self.__known_things - candidates:
             data = game_pb2.RemoveObject()
@@ -117,6 +166,9 @@ class Player(LivingThing):
         return to_add
 
     def update_locations(self, to_update):
+        """Send updates to the client informing it about changes to
+        objects (location, velocity, heading and angular velocity.)"""
+
         for thing in to_update:
             data = game_pb2.ThingState()
             data.tag = thing.name
@@ -135,6 +187,8 @@ class Player(LivingThing):
 
     @classmethod
     def update_all(self):
+        """Send appropriate updates to all players."""
+
         update_time = time()
         to_update = set()
         while Thing.pending_updates and Thing.pending_updates[0][0] < update_time:

@@ -54,6 +54,12 @@ class Rpc(asynchat.async_chat):
 
     @staticmethod
     def encode_variant(val):
+        """When the server subscribes to an event on the client, it must
+        receive a number of arguments of unspecified type.  These are
+        encoded using the Variant message.  We assume that all the
+        arguments will be integer, float or string.  If not, the server
+        will be unable to subscribe to events of that type."""
+
         data = general_pb2.Variant()
 
         if isinstance(val, int):

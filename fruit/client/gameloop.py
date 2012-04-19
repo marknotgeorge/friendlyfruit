@@ -67,7 +67,7 @@ class FriendlyFruit(ShowBase):
         # Create a task to update the scene regularly.
         self.taskMgr.add(self.update, "UpdateTask")
 
-    # Update the scene by turning the player if necessary, and processing physics.
+    # Update the scene by turning objects if necessary, and processing physics.
     def update(self, task):
         asyncore.loop(timeout=0.01, use_poll=True, count=1)
 
@@ -79,24 +79,37 @@ class FriendlyFruit(ShowBase):
         return task.cont
 
     def server_created_object(self, tag, height, radius):
+        # This shape is used for collision detection, preventing the player falling through the ground for
+        # example.
         shape = BulletCapsuleShape(radius, height - 2 * radius, ZUp)
 
+        # A character controller is a physical body which responds instantly to keyboard controls.  (Bodies
+        # which respond to forces are difficult to control in a satisfactory way using typical video game
+        # controls.  Players expect them to move instantly when a button is pressed, but physics dictates that
+        # they should take a short time to accelerate.)
         node = BulletCharacterControllerNode(shape, 0.4, tag)
         node_path = self.render.attachNewNode(node)
         self.world.attachCharacter(node_path.node())
 
+        # Does this object represent the player who is using this client?
         if tag == self.__player_tag:
+            # If yes, attach the camera to the object, so the player's view follows the object.
             self.camera.reparentTo(node_path)
         else:
+            # If no, create a new Actor to represent the player or NPC.
             humanoid = Actor("player.egg")
             humanoid.setH(180)
             humanoid.reparentTo(node_path)
 
+            # Scale the Actor so it is the same height as the bounding volume requested by the server.
             point1 = Point3()
             point2 = Point3()
             humanoid.calcTightBounds(point1, point2)
             humanoid.setScale(height / (point2.z - point1.z))
 
+            # If the 3D model has the origin point at floor level, we need to move it down by half the height
+            # of the bounding volume.  Otherwise it will hang in mid air, with its feet in the middle of the
+            # bounding volume.
             humanoid.setZ(-height / 2)
 
     def server_moves_thing(self, tag, loc_x, loc_y, loc_z, speed_x, speed_y, speed_z, angle, angular_velocity):

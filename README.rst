@@ -22,6 +22,11 @@ demonstrating that the textures work.  He also has a walk cycle of
 sorts, demonstrating that armatures and animations work.  That's
 really all we need.
 
+If you log on to the game twice, the characters will be able to see
+each other.  They both start in the same location, so if one of them
+walks backwards, it will see the other.  If one walks forward, it will
+be seen by the other.
+
 Prerequisites
 -------------
 
@@ -82,6 +87,9 @@ Building
 Run scons in the top level directory, to build the RPC stubs.  These
 are pure Python and presumably cross-platform; nothing is compiled to
 machine code.
+
+If you pull new revisions from the repository, don't forget to run
+scons again.
 
 Configuration
 -------------

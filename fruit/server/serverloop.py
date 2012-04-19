@@ -85,6 +85,11 @@ class FruitRequestHandler(messaging.Rpc):
             self.accept('arrow_right-up', self.__turn, [0])
 
     def accept(self, event, handler, preset_args):
+        """Subscribe to an event on the client.  This allows the
+        server to receive keystrokes, mouse clicks, and so on.  A
+        unique tag is sent to the client, allowing events of this type
+        to be distinguished from other events."""
+
         def handle_event(*event_args):
             handler(*(preset_args + list(event_args)))
 
@@ -98,20 +103,23 @@ class FruitRequestHandler(messaging.Rpc):
         msg.tag = self.__next_event_tag
         self.send_rpc(msg)
 
-    # Set the player to move forward (W or S keys).
     def __forward(self, speed):
+        """Set the player to move forward (W or S keys)."""
+
         velocity = self.__player.get_velocity()
         velocity.y = speed
         self.__player.set_velocity(velocity)
 
-    # Set the player to move sideways (A or D keys).
     def __strafe(self, speed):
+        """Set the player to move sideways (A or D keys)."""
+
         velocity = self.__player.get_velocity()
         velocity.x = speed
         self.__player.set_velocity(velocity)
 
-    # Set the player to turn (left and right arrow keys).
     def __turn(self, rate):
+        """Set the player to turn (left and right arrow keys)."""
+
         self.__player.set_angular_velocity(rate)
 
 class FruitServer(asyncore.dispatcher):
